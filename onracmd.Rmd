@@ -1,0 +1,61 @@
+---
+title: "onrac"
+author: "M. Herrera"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggthemes)
+
+```
+
+## Import the Thumb Dataset
+```{r read}
+onrac=read.csv('onrac.csv')
+onrac$Thumb <- relevel(onrac$Thumb,"Right")
+print(onrac)
+```
+
+## apply a GLM fit
+
+
+```{r fit}
+fit <- glm(Thumb ~ Handed, data=onrac, family=binomial("logit"),weight=N)
+summary(fit)
+```
+
+## Calculate model output and 95% CI
+  
+```{r, echo=TRUE}
+newdat <- data.frame(c("Left","Right"))
+colnames(newdat) = "Handed"
+
+pout=predict(fit,newdat,type = "link",se.fit = TRUE)
+pout$Handed=newdat$Handed
+pout <- data.frame(pout)
+
+#1.96 for 95%CI
+clow <-  pout$fit - 1.96*pout$se.fit
+chigh <- pout$fit + 1.96*pout$se.fit
+
+pout$plow=exp(clow)/(1+exp(clow))
+pout$phigh=exp(chigh)/(1+exp(chigh))
+pout$fit=exp(pout$fit)/(1+exp(pout$fit))
+out <- data.frame(pout)
+
+
+```
+
+## make a pretty plot
+```{r}
+pout %>% 
+  ggplot() +
+  geom_point(aes(x=Handed,y=fit)) +
+  geom_errorbar(aes(x=Handed,ymin=plow, ymax=phigh),width=0.1,color="red") +
+  ylab("P(Left Thumb on Top)") + 
+  ggtitle("ONRAC Twitter Data Set", subtitle = "N=829; p <0.002") +
+  theme_gray(base_size = 15)
+```
+
