@@ -48,7 +48,7 @@ out <- data.frame(pout)
 
 ```
 
-## make a pretty plot
+## Make a pretty plot
 ```{r}
 pout %>% 
   ggplot() +
